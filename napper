@@ -21,7 +21,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-exec="/home/xskipy/Dokumenty/inittools/napper.sh"
+exec="/home/$USER/init-symlinks/napper.sh"
 prog="Napper that sleeps"
 #config="<path to major config file>"
 
@@ -34,7 +34,7 @@ start() {
     [ -f $config ] || exit 6
     echo -n $"Starting $prog: "
     # if not running, start it up here, usually something like "daemon $exec"
-    ./home/xskipy/Dokumenty/inittools/napper.sh
+    ./home/$USER/init-symlinks/napper.sh
     retval=$?
     echo
     [ $retval -eq 0 ] && touch $lockfile

@@ -1,0 +1,9 @@
+README
+
+test.sh
+	testing tool for creating init symlinks under systemd
+napper
+	sample initscript which launches on 2, 3 and 6 run levels
+	default daemon path is /home/$USER/init-symlinks/napper.sh
+napper.sh
+	sample daemon which does nothing else than sleeps, hence the name
