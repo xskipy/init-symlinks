@@ -6,17 +6,46 @@
 #
 #
 #
-cd /etc/rc.d/init.d
-touch /home/$USER/testlog.txt
+
+is_ignored_file() {
+    case "$1" in
+	*~ | *.bak | *.orig | *.rpmnew | *.rpmorig | *.rpmsave)
+	    return 0
+	    ;;
+    esac
+    return 1
+}
+
+LOGFILE="/dev/stdout"
+ROOT="/"
+while [ "$1" != "${1##[-+]}" ]; do
+        case $1 in
+        --logfile)
+                LOGFILE=$2
+                shift 2
+        ;;
+        --root)
+                ROOT=$2
+                shift 2
+        ;;
+        *)
+                echo "Wrong args"
+                exit 1;;
+    esac
+done
+
+cd $ROOT/etc/rc.d/init.d
+touch $LOGFILE
 echo "
 				chkconfig testlog
----------------------------------------------------------" >> /home/$USER/testlog.txt
+---------------------------------------------------------" >> $LOGFILE
 
-date >> /home/$USER/testlog.txt
+date >> $LOGFILE
 for INITNAME in $(ls --ignore "functions" --ignore "README")
 do
+	is_ignored_file
 	printf "Testing init %s : \n" "$INITNAME"
-	chkconfigSettings=$(grep "chkconfig" /etc/rc.d/init.d/"$INITNAME")
+	chkconfigSettings=$(grep "chkconfig" $ROOT/etc/rc.d/init.d/"$INITNAME")
 	RUNLEVELS=$(echo "$chkconfigSettings" | awk '{printf $3}') 	#RUNLEVEL VARIABLE INITIALIZATION..
 	printf "On run levels.. %s \n" "$RUNLEVELS"
 	STA=$(echo "$chkconfigSettings" | awk '{printf $4}')
@@ -30,22 +59,22 @@ do
 			if [ ! "$n" == '' ]; then
 				for lev in $(seq $first 1 6); do
 					if [ $lev == $n ]; then
-						if [ -e /etc/rc.d/rc$n.d/S$STA$INITNAME ]; then
-							echo "S$STA$INITNAME found in /etc/rc.d/rc$lev.d/" >> /home/$USER/testlog.txt
+						if [ -e $ROOT/etc/rc.d/rc$n.d/S$STA$INITNAME ]; then
+							echo "S$STA$INITNAME found in $ROOT/etc/rc.d/rc$lev.d/" >> $LOGFILE
 							first=$(($n+1))
 							continue 2
 
 						else
-							echo "S$STA$INITNAME NOT FOUND!!! in /etc/rc.d/rc$lev.d/"  >> /home/$USER/testlog.txt
+							echo "S$STA$INITNAME NOT FOUND!!! in $ROOT/etc/rc.d/rc$lev.d/"  >> $LOGFILE
 							first=$(($n+1))
 							ok=false
 							continue 2
 						fi
 					else
-						if [ -e /etc/rc.d/rc$lev.d/K$END$INITNAME ]; then
-							echo "K$END$INITNAME found in /etc/rc.d/rc$lev.d/" >> /home/$USER/testlog.txt
+						if [ -e $ROOT/etc/rc.d/rc$lev.d/K$END$INITNAME ]; then
+							echo "K$END$INITNAME found in /etc/rc.d/rc$lev.d/" >> $LOGFILE
 						else
-							echo "K$END$INITNAME NOT FOUND!!! in /etc/rc.d/rc$lev.d/"  >> /home/$USER/testlog.txt
+							echo "K$END$INITNAME NOT FOUND!!! in /etc/rc.d/rc$lev.d/"  >> $LOGFILE
 							ok=false
 						fi
 					fi
@@ -54,10 +83,10 @@ do
 		done
 	else
 		for k in $(seq 0 1 6); do
-			if [ -e /etc/rc.d/rc$k.d/K$END$INITNAME ]; then
-				echo "K$END$INITNAME found in /etc/rc.d/rc$k.d/" >> /home/$USER/testlog.txt
+			if [ -e $ROOT/etc/rc.d/rc$k.d/K$END$INITNAME ]; then
+				echo "K$END$INITNAME found in /etc/rc.d/rc$k.d/" >> $LOGFILE
 			else
-				echo "K$END$INITNAME NOT FOUND!!! in /etc/rc.d/rc$k.d/"  >> /home/$USER/testlog.txt
+				echo "K$END$INITNAME NOT FOUND!!! in /etc/rc.d/rc$k.d/"  >> $LOGFILE
 				ok=false
 			fi
 		done
@@ -66,14 +95,14 @@ do
 	#printf "\n"
 
 	if [ $ok = true ]; then
-				printf "Init $INITNAME is ok." >>  /home/$USER/testlog.txt
+				printf "Init $INITNAME is ok." >>  $LOGFILE
 				echo "Ok.."
 
 		else
-				printf "Init $INITINAME is NOT OK, see log^." >> /home/$USER/testlog.txt
+				printf "Init $INITINAME is NOT OK, see log^." >> $LOGFILE
 				echo "Fail.."
 	fi
 	echo "
-" >> /home/$USER/testlog.txt
+" >> $LOGFILE
 done
-echo "Log file created at.. /home/$USER/testlog.txt"
+echo "Log file created at.. $LOGFILE"

@@ -1,19 +1,29 @@
 README
 
 chkconfig_test.sh
-	testing tool for creating init symlinks under systemd with chkconfig header
 lsb_test.sh
-	testing tool for creating init symlinks under systemd with lsb header
+	tools for testing creating init symlinks under systemd with lsb header
+
+	--logfile /path/log.txt
+		default /dev/stdout
+
+  --root $PREFIX /etc/rc.d/
+		default no prefix
+
 napper
 	sample chkconfig initscript which launches on 2, 3 and 6 run levels
 	default daemon path is /home/$USER/init-symlinks/napper.sh
+
 sleeper
 	sample LSB initscript which launches on 0 1 6 run levels
 	default daemon path is /home/$USER/init-symlinks/sleeper.sh
+
 bed
 	sample LSB initscript which launches on 2, 3 and 6 run levels
 	default daemon path is /home/$USER/init-symlinks/bed.sh
+
 napper.sh
 	sample daemon which does nothing else than sleeps, hence the name
+	
 sleeper.sh
-	sample daemon which does nothing else than sleeps and Zzzzzzs	
+	sample daemon which does nothing else than sleeps and Zzzzzzs

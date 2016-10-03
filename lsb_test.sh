@@ -6,20 +6,49 @@
 #
 #
 #set -x
-cd /etc/rc.d/init.d
-touch /home/$USER/testlog.txt
+
+is_ignored_file() {
+    case "$1" in
+	*~ | *.bak | *.orig | *.rpmnew | *.rpmorig | *.rpmsave)
+	    return 0
+	    ;;
+    esac
+    return 1
+}
+
+LOGFILE="/dev/stdout"
+ROOT="/"
+while [ "$1" != "${1##[-+]}" ]; do
+        case $1 in
+        --logfile)
+                LOGFILE=$2
+                shift 2
+        ;;
+        --root)
+                ROOT=$2
+                shift 2
+        ;;
+        *)
+                echo "Wrong args"
+                exit 1;;
+    esac
+done
+
+cd $ROOT/etc/rc.d/init.d
+touch $LOGFILE
 echo "
 				lsb testlog
----------------------------------------------------------" >> /home/$USER/testlog.txt
+---------------------------------------------------------" >> $LOGFILE
 
-date >> /home/$USER/testlog.txt
+date >> $LOGFILE
 for INITNAME in $(ls --ignore "functions" --ignore "README")
 do
+	is_ignored_file
 	printf "Testing init %s : \n" "$INITNAME"
-	lsb_start=$(grep "Default-Start" /etc/rc.d/init.d/"$INITNAME")
-	lsb_stop=$(grep "Default-Stop" /etc/rc.d/init.d/"$INITNAME")
+	lsb_start=$(grep "Default-Start" $ROOT/etc/rc.d/init.d/"$INITNAME")
+	lsb_stop=$(grep "Default-Stop" $ROOT/etc/rc.d/init.d/"$INITNAME")
 	#RUNLEVELS=$(echo "$chkconfigSettings" | awk '{printf $3}') 	#RUNLEVEL VARIABLE INITIALIZATION..
-	#printf "$lsb_start /n$lsb_stop /n" >> /home/$USER/testlog.txt
+	#printf "$lsb_start /n$lsb_stop /n" >> $LOGFILE
 	#printf "%s" $RUNLEVELS
 	ok=true
 	compatible=false
@@ -36,22 +65,22 @@ do
 
 		for n in $(seq 0 1 6); do
 			if [ $n == $STA ]; then
-				if [ -e /etc/rc.d/rc$n.d/S*$INITNAME ]; then
-					echo "$( ls /etc/rc.d/rc$n.d/ | grep "***$INITNAME" ) found in /etc/rc.d/rc$n.d/" >> /home/$USER/testlog.txt
+				if [ -e $ROOT/etc/rc.d/rc$n.d/S*$INITNAME ]; then
+					echo "$( ls $ROOT/etc/rc.d/rc$n.d/ | grep "***$INITNAME" ) found in $ROOT/etc/rc.d/rc$n.d/" >> $LOGFILE
 					compatible=true
 				else
-					echo "$( ls /etc/rc.d/rc$n.d/ | grep "***$INITNAME" ) NOT FOUND!!! in /etc/rc.d/rc$n.d/"  >> /home/$USER/testlog.txt
+					echo "$( ls $ROOT/etc/rc.d/rc$n.d/ | grep "***$INITNAME" ) NOT FOUND!!! in $ROOT/etc/rc.d/rc$n.d/"  >> $LOGFILE
 					compatible=true
 					ok=false
 				fi
 			fi
 
 			if [ $n == $END ]; then
-				if [ -e /etc/rc.d/rc$n.d/K*$INITNAME ]; then
-					echo "$( ls /etc/rc.d/rc$n.d/ | grep "***$INITNAME" ) found in /etc/rc.d/rc$n.d/" >> /home/$USER/testlog.txt
+				if [ -e $ROOT/etc/rc.d/rc$n.d/K*$INITNAME ]; then
+					echo "$( ls $ROOT/etc/rc.d/rc$n.d/ | grep "***$INITNAME" ) found in $ROOT/etc/rc.d/rc$n.d/" >> $LOGFILE
 					compatible=true
 				else
-					echo "$( ls /etc/rc.d/rc$n.d/ | grep "***$INITNAME" )NOT FOUND!!! in /etc/rc.d/rc$n.d/"  >> /home/$USER/testlog.txt
+					echo "$( ls $ROOT/etc/rc.d/rc$n.d/ | grep "***$INITNAME" )NOT FOUND!!! in $ROOT/etc/rc.d/rc$n.d/"  >> $LOGFILE
 					compatible=true
 					ok=false
 				fi
@@ -64,12 +93,12 @@ do
   if [ $compatible = true ]; then
 		if [ $ok = true ]; then
 					echo "Init $INITNAME is ok.
-Checking dependencies.." >>  /home/$USER/testlog.txt
+Checking dependencies.." >>  $LOGFILE
 					echo "Ok.."
 					dep=3
-					dependencies=$(grep "Required-Start" /etc/rc.d/init.d/$INITNAME)
+					dependencies=$(grep "Required-Start" $ROOT/etc/rc.d/init.d/$INITNAME)
 					if [ "$(echo "$dependencies" | awk "{printf \$$dep}")" == '' ]; then
-						echo "Ok.. " >> /home/$USER/testlog.txt
+						echo "Ok.. " >> $LOGFILE
 						echo "Ok.."
 					fi
 					while [ ! $(echo "$dependencies" | awk "{printf \$$dep}") == '' ]; do
@@ -81,27 +110,27 @@ Checking dependencies.." >>  /home/$USER/testlog.txt
 							DepFile=$( dir | grep "***$dependencies" )
 							DForder=${DepFile:1:2}
 							if [ $IForder -lt $DForder ]; then
-								echo "Init $INITNAME is starting after required $dependencies.... Ok" >> /home/$USER/testlog.txt
+								echo "Init $INITNAME is starting after required $dependencies.... Ok" >> $LOGFILE
 								echo "$INITNAME is starting after required $dependencies.. ok"
 							else
-								echo "Init $INITNAME is starting BEFORE required $dependencies.... FAIL!!!" >> /home/$USER/testlog.txt
+								echo "Init $INITNAME is starting BEFORE required $dependencies.... FAIL!!!" >> $LOGFILE
 								echo "$INITNAME is starting BEFORE required $dependencies.. FAIL!!!"
 							fi
 							dep=$(($dep+1))
 					done
 		else
-					echo "Init $INITNAME is NOT OK, see log^." >> /home/$USER/testlog.txt
+					echo "Init $INITNAME is NOT OK, see log^." >> $LOGFILE
 					echo "Dependencies were not tested.
-					" >> /home/$USER/testlog.txt
+					" >> $LOGFILE
 					echo "Fail..
 Dependencies were not tested."
 		fi
 	else
-		echo "Init $INITNAME is not compatible with lsb." >> /home/$USER/testlog.txt
+		echo "Init $INITNAME is not compatible with lsb." >> $LOGFILE
 		echo "Not compatible with lsb.."
 	fi
 	echo "
-" >> /home/$USER/testlog.txt
+" >> $LOGFILE
 done
 
-echo "Log file created at.. /home/$USER/testlog.txt"
+echo "Log file created at.. $LOGFILE"
